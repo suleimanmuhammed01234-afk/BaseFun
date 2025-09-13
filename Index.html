@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BaseFun - Find The Next Gem</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #f5f5f5;
+        }
+        /* Custom scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+
+    .glass-pane {
+        background: rgba(26, 26, 26, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    #add-token-drawer {
+        transition: transform 0.3s ease-in-out;
+    }
+
+    .table-row-item:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Custom focus rings */
+    .form-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #3b82f6; /* blue-500 */
+    }
+    .form-select:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px #3b82f6;
+    }
+
+    /* Loader Animation */
+    .loader {
+        border: 4px solid #333;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+
+</head>
+<body class="min-h-screen">
+
+
+<!-- Header -->
+<header class="glass-pane sticky top-0 z-30">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+            <div class="flex items-center space-x-3">
+                 <svg class="w-8 h-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.09 17.52l-2.06-2.07a1.5 1.5 0 0 1 0-2.12l5.54-5.54a1.5 1.5 0 0 1 2.12 0l2.07 2.06a1.5 1.5 0 0 1 0 2.12l-5.54 5.54a1.5 1.5 0 0 1-2.12 0z"/><path d="m6.24 11.23-1.73 1.73a3.5 3.5 0 0 0 0 4.95l2.12 2.12a3.5 3.5 0 0 0 4.95 0l1.73-1.73"/><path d="m12.77 17.76 1.73-1.73a3.5 3.5 0 0 0 0-4.95l-2.12-2.12a3.5 3.5 0 0 0-4.95 0l-1.73 1.73"/></svg>
+                <h1 class="text-2xl font-bold text-gray-100">BaseFun</h1>
+            </div>
+            <button id="menu-button" class="p-2 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white">
+                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="container mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- List View Container -->
+    <div id="list-view-container">
+        <!-- Filters -->
+        <div class="mb-6 space-y-4">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-4 p-3 glass-pane rounded-lg">
+                <div class="flex space-x-1 bg-gray-800 p-1 rounded-md">
+                    <button data-filter="new" class="filter-btn bg-blue-600 text-white px-3 py-1 text-sm font-semibold rounded-md">New</button>
+                    <button data-filter="trending" class="filter-btn text-gray-300 hover:bg-gray-700 px-3 py-1 text-sm font-semibold rounded-md">Trending</button>
+                    <button data-filter="hot" class="filter-btn text-gray-300 hover:bg-gray-700 px-3 py-1 text-sm font-semibold rounded-md">Hot</button>
+                    <button data-filter="boosted" class="filter-btn text-gray-300 hover:bg-gray-700 px-3 py-1 text-sm font-semibold rounded-md">Boosted</button>
+                    <button data-filter="watchlist" class="filter-btn text-gray-300 hover:bg-gray-700 px-3 py-1 text-sm font-semibold rounded-md">Watchlist</button>
+                </div>
+                <div class="flex-grow"></div>
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <select id="blockchain-filter" class="form-select bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2">
+                        <option selected value="all">All Blockchains</option>
+                        <option value="ethereum">Ethereum</option>
+                        <option value="solana">Solana</option>
+                        <option value="binance-smart-chain">BNB Chain</option>
+                        <option value="base">Base</option>
+                        <option value="avalanche">Avalanche</option>
+                    </select>
+                    <select id="sort-by" class="form-select bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full sm:w-auto p-2">
+                        <option value="time">Sort by: Age</option>
+                        <option value="name">Sort by: Name</option>
+                        <option value="mcap">Sort by: Market Cap</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coins List/Table -->
+        <div class="glass-pane rounded-lg overflow-hidden">
+            <div id="loader" class="flex justify-center items-center h-64"><div class="loader"></div></div>
+            <div id="coins-list" class="overflow-x-auto">
+                <!-- Coin rows will be injected here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Detail View Container (hidden by default) -->
+    <div id="detail-view-container" class="hidden">
+        <!-- Populated by JS -->
+    </div>
+
+</main>
+
+<!-- Add Token Drawer (hidden by default) -->
+<div id="add-token-drawer-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+<div id="add-token-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900 shadow-lg z-50 transform translate-x-full p-6 overflow-y-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Add New Token</h2>
+        <button id="close-drawer-button" class="p-2 rounded-full hover:bg-gray-700">
+            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    <form id="add-token-form" class="space-y-4">
+        <input type="text" id="tokenCA" placeholder="Contract Address" required class="w-full form-input bg-gray-800 border border-gray-700 rounded-md p-3">
+        <input type="url" id="tokenLogo" placeholder="Token Logo URL" required class="w-full form-input bg-gray-800 border border-gray-700 rounded-md p-3">
+        <select id="tokenBlockchain" required class="w-full form-select bg-gray-800 border border-gray-700 rounded-md p-3">
+            <option value="" disabled selected>Select Blockchain</option>
+            <option value="ethereum">Ethereum</option>
+            <option value="solana">Solana</option>
+            <option value="binance-smart-chain">BNB Chain</option>
+            <option value="base">Base</option>
+            <option value="avalanche">Avalanche</option>
+        </select>
+        <input type="text" id="tokenName" placeholder="Token Name" required class="w-full form-input bg-gray-800 border border-gray-700 rounded-md p-3">
+        <input type="text" id="tokenSymbol" placeholder="Token Symbol" required class="w-full form-input bg-gray-800 border border-gray-700 rounded-md p-3">
+        <textarea id="tokenDescription" placeholder="Description" required rows="4" class="w-full form-input bg-gray-800 border border-gray-700 rounded-md p-3"></textarea>
+        <div class="flex items-center space-x-3">
+            <input type="checkbox" id="isPresale" class="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500">
+            <label for="isPresale" class="text-gray-300">Token is on Presale</label>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-300">Submit Token</button>
+    </form>
+</div>
+
+<!-- Boost Modal -->
+<div id="boost-modal-backdrop" class="fixed inset-0 bg-black bg-opacity-70 z-40 hidden"></div>
+<div id="boost-modal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50 p-6 hidden">
+    <h3 class="text-xl font-bold text-center mb-4">Boost This Project!</h3>
+    <p class="text-center text-gray-400 mb-6">Send any amount to the address below to boost this project's visibility.</p>
+    <div class="space-y-4 text-center">
+        <p class="text-lg">Price per boost: <span id="boost-price" class="font-mono text-yellow-400"></span> ETH</p>
+        <div class="bg-gray-800 p-4 rounded-lg">
+            <p class="text-sm text-gray-500 mb-1">Send to this address:</p>
+            <p id="boost-wallet" class="font-mono text-sm break-all"></p>
+        </div>
+    </div>
+    <div class="flex gap-2 mt-6">
+        <button id="simulate-boost-btn" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-bold py-2 px-4 rounded-md">Simulate Boost</button>
+        <button id="close-boost-modal" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-md">Close</button>
+    </div>
+</div>
+
+<!-- Message Display -->
+<div id="message-box" class="hidden fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-transform duration-300 translate-x-full"></div>
+
+<script>
+    // --- STATE ---
+    let allCoins = [];
+    let currentView = 'list';
+    let filters = { sortBy: 'time', filterBy: 'new', blockchain: 'all' };
+    
+    // --- DOM ELEMENTS ---
+    const DOMElements = {
+        menuButton: document.getElementById('menu-button'),
+        drawer: document.getElementById('add-token-drawer'),
+        drawerBackdrop: document.getElementById('add-token-drawer-backdrop'),
+        closeDrawerButton: document.getElementById('close-drawer-button'),
+        addTokenForm: document.getElementById('add-token-form'),
+        loader: document.getElementById('loader'),
+        coinsList: document.getElementById('coins-list'),
+        listView: document.getElementById('list-view-container'),
+        detailView: document.getElementById('detail-view-container'),
+        messageBox: document.getElementById('message-box'),
+        filterButtons: document.querySelectorAll('.filter-btn'),
+        blockchainFilter: document.getElementById('blockchain-filter'),
+        sortBy: document.getElementById('sort-by'),
+        boostModal: document.getElementById('boost-modal'),
+        boostModalBackdrop: document.getElementById('boost-modal-backdrop'),
+        closeBoostModal: document.getElementById('close-boost-modal'),
+        simulateBoostBtn: document.getElementById('simulate-boost-btn'),
+        boostPrice: document.getElementById('boost-price'),
+        boostWallet: document.getElementById('boost-wallet'),
+    };
+
+    // --- UTILITY FUNCTIONS ---
+    const formatNumber = (num) => {
+        if (num === null || num === undefined) return 'N/A';
+        if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
+        if (num >= 1_000_000) return `$${(num / 1_000_000).toFixed(2)}M`;
+        if (num >= 1_000) return `$${(num / 1_000).toFixed(2)}K`;
+        return `$${num.toFixed(2)}`;
+    };
+
+    const timeSince = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + " years";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + " months";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " minutes";
+        return Math.floor(seconds) + " seconds";
+    };
+
+    const showMessage = (message, isError = false) => {
+        DOMElements.messageBox.textContent = message;
+        DOMElements.messageBox.className = `fixed top-5 right-5 text-white py-2 px-4 rounded-lg shadow-lg z-50 transition-transform duration-300 ${isError ? 'bg-red-500' : 'bg-blue-500'}`;
+        DOMElements.messageBox.classList.remove('hidden', 'translate-x-full');
+        setTimeout(() => { DOMElements.messageBox.classList.add('translate-x-full'); }, 3000);
+    };
+
+    // --- LOCAL STORAGE FUNCTIONS ---
+    const saveTokensToLocalStorage = (tokens) => {
+        try {
+            // Use JavaScript variables instead of localStorage
+            window.coinsData = tokens;
+        } catch (error) {
+            console.error('Error saving tokens:', error);
+        }
+    };
+
+    const loadTokensFromLocalStorage = () => {
+        try {
+            return window.coinsData || [];
+        } catch (error) {
+            console.error('Error loading tokens:', error);
+            return [];
+        }
+    };
+
+    // --- VIEW MANAGEMENT ---
+    function switchView(view, data) {
+        currentView = view;
+        if (view === 'list') {
+            DOMElements.detailView.classList.add('hidden');
+            DOMElements.listView.classList.remove('hidden');
+            DOMElements.detailView.innerHTML = ''; 
+        } else if (view === 'detail') {
+            DOMElements.listView.classList.add('hidden');
+            DOMElements.detailView.classList.remove('hidden');
+            renderDetailView(data);
+        }
+    }
+    
+    // --- DRAWER & MODAL MANAGEMENT ---
+    function toggleDrawer(show) {
+        if (show) {
+            DOMElements.drawerBackdrop.classList.remove('hidden');
+            DOMElements.drawer.classList.remove('translate-x-full');
+        } else {
+            DOMElements.drawerBackdrop.classList.add('hidden');
+            DOMElements.drawer.classList.add('translate-x-full');
+        }
+    }
+    
+    function toggleBoostModal(show, coin = null) {
+        if (show && coin) {
+            DOMElements.boostPrice.textContent = (Math.random() * 0.1).toFixed(4);
+            DOMElements.boostWallet.textContent = '0x' + [...Array(40)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+            DOMElements.boostModal.dataset.coinId = coin.id;
+            DOMElements.boostModal.classList.remove('hidden');
+            DOMElements.boostModalBackdrop.classList.remove('hidden');
+        } else {
+            DOMElements.boostModal.classList.add('hidden');
+            DOMElements.boostModalBackdrop.classList.add('hidden');
+        }
+    }
+
+    // --- API & DATA HANDLING ---
+    async function fetchMarketData(coinIds) {
+        if (coinIds.length === 0) return {};
+        const ids = coinIds.join(',');
+        const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&per_page=250&page=1&sparkline=false&price_change_percentage=1h%2C24h`;
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`CoinGecko API error: ${response.statusText}`);
+            const data = await response.json();
+            const marketDataMap = {};
+            data.forEach(coin => { marketDataMap[coin.id] = coin; });
+            return marketDataMap;
+        } catch (error) {
+            console.error("Error fetching from CoinGecko:", error);
+            showMessage("Could not fetch live price data.", true);
+            return {};
+        }
+    }
+    
+    async function handleAddToken(e) {
+        e.preventDefault();
+        
+        const token = {
+            id: Date.now().toString(),
+            contractAddress: document.getElementById('tokenCA').value.trim(),
+            logoUrl: document.getElementById('tokenLogo').value.trim(),
+            blockchain: document.getElementById('tokenBlockchain').value,
+            name: document.getElementById('tokenName').value.trim(),
+            symbol: document.getElementById('tokenSymbol').value.trim().toUpperCase(),
+            description: document.getElementById('tokenDescription').value.trim(),
+            isPresale: document.getElementById('isPresale').checked,
+            coingeckoId: document.getElementById('tokenName').value.trim().toLowerCase().replace(/\s+/g, '-'),
+            submittedAt: new Date().toISOString(),
+            boosts: 0
+        };
+
+        const existingTokens = loadTokensFromLocalStorage();
+        existingTokens.push(token);
+        saveTokensToLocalStorage(existingTokens);
+        
+        showMessage("Token submitted successfully!");
+        DOMElements.addTokenForm.reset();
+        toggleDrawer(false);
+        
+        await loadAndRenderCoins();
+    }
+
+    async function handleBoostToken() {
+        const coinId = DOMElements.boostModal.dataset.coinId;
+        if (!coinId) return;
+
+        const tokens = loadTokensFromLocalStorage();
+        const tokenIndex = tokens.findIndex(t => t.id === coinId);
+        
+        if (tokenIndex !== -1) {
+            tokens[tokenIndex].boosts = (tokens[tokenIndex].boosts || 0) + 1;
+            saveTokensToLocalStorage(tokens);
+            showMessage("Token boosted successfully! 🔥");
+            toggleBoostModal(false);
+            await loadAndRenderCoins();
+        }
+    }
+
+    // --- RENDERING ---
+    async function loadAndRenderCoins() {
+        DOMElements.loader.style.display = 'flex';
+        
+        const tokensFromStorage = loadTokensFromLocalStorage();
+        
+        // Fetch market data for tokens that have coingeckoId
+        const coingeckoIds = tokensFromStorage.map(c => c.coingeckoId).filter(Boolean);
+        const marketData = await fetchMarketData(coingeckoIds);
+
+        // Merge token data with market data
+        allCoins = tokensFromStorage.map(coin => ({
+            ...coin,
+            ...(marketData[coin.coingeckoId] || {})
+        }));
+        
+        renderCoinList();
+    }
+
+    function renderCoinList() {
+        DOMElements.loader.style.display = 'none';
+        DOMElements.coinsList.innerHTML = '';
+
+        // Apply filters and sorting
+        let filteredCoins = allCoins.filter(coin => {
+            if (filters.blockchain === 'all') return true;
+            return coin.blockchain === filters.blockchain;
+        });
+
+        if(filters.filterBy === 'boosted') {
+            filteredCoins = filteredCoins.filter(c => c.boosts > 0).sort((a, b) => b.boosts - a.boosts);
+        }
+
+        filteredCoins.sort((a, b) => {
+            switch(filters.sortBy) {
+                case 'name': return a.name.localeCompare(b.name);
+                case 'mcap': return (b.market_cap || 0) - (a.market_cap || 0);
+                case 'time':
+                default: return new Date(b.submittedAt) - new Date(a.submittedAt);
+            }
+        });
+
+        if (filteredCoins.length === 0) {
+            DOMElements.coinsList.innerHTML = `<p class="text-center text-gray-400 p-8">No tokens found. <button onclick="toggleDrawer(true)" class="text-blue-400 hover:text-blue-300 underline">Add the first token!</button></p>`;
+            return;
+        }
+
+        // Create Table Header
+        const header = `
+            <div class="hidden md:grid grid-cols-12 gap-4 items-center px-6 py-3 text-xs uppercase text-gray-400 font-semibold border-b border-gray-700">
+                <div class="col-span-3">Project</div>
+                <div class="text-right">Boosts</div>
+                <div class="text-right">1h %</div>
+                <div class="text-right">24h %</div>
+                <div class="col-span-2 text-right">Price</div>
+                <div class="col-span-2 text-right">Market Cap</div>
+                <div class="col-span-2 text-right">Age</div>
+            </div>
+        `;
+        DOMElements.coinsList.innerHTML += header;
+
+        // Create Table Rows
+        filteredCoins.forEach(coin => {
+            const change1h = coin.price_change_percentage_1h_in_currency;
+            const change24h = coin.price_change_percentage_24h_in_currency;
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-2 md:grid-cols-12 gap-4 items-center px-6 py-4 border-b border-gray-800 cursor-pointer table-row-item';
+            row.dataset.coinId = coin.id;
+            
+            row.innerHTML = `
+                <!-- Project (Mobile + Desktop) -->
+                <div class="col-span-2 md:col-span-3 flex items-center space-x-3">
+                    <img src="${coin.logoUrl}" class="w-10 h-10 rounded-full" onerror="this.src='https://placehold.co/40x40/1f2937/ffffff?text=${coin.symbol.charAt(0)}'">
+                    <div>
+                        <p class="font-bold text-white">${coin.name} <span class="text-gray-400 font-normal">$${coin.symbol}</span></p>
+                        <p class="text-xs text-gray-500">${coin.blockchain}</p>
+                    </div>
+                </div>
+                
+                <!-- Data for Desktop -->
+                <div class="hidden md:block text-right ${coin.boosts > 0 ? 'text-yellow-400 font-bold' : 'text-gray-400'}">${coin.boosts} 🔥</div>
+                <div class="hidden md:block text-right ${change1h > 0 ? 'text-green-500' : 'text-red-500'}">${change1h?.toFixed(2) ?? 'N/A'}%</div>
+                <div class="hidden md:block text-right ${change24h > 0 ? 'text-green-500' : 'text-red-500'}">${change24h?.toFixed(2) ?? 'N/A'}%</div>
+                <div class="hidden md:block col-span-2 text-right text-white font-semibold">$${coin.current_price?.toLocaleString('en-US', {maximumFractionDigits: 8}) ?? 'N/A'}</div>
+                <div class="hidden md:block col-span-2 text-right text-gray-300">${formatNumber(coin.market_cap)}</div>
+                <div class="hidden md:block col-span-2 text-right text-gray-400">${timeSince(coin.submittedAt)}</div>
+                
+                <!-- Data for Mobile (below the name) -->
+                <div class="col-span-2 md:hidden grid grid-cols-3 gap-2 text-xs mt-2">
+                    <div class="text-center bg-gray-800 p-2 rounded">
+                        <p class="text-gray-400">Price</p>
+                        <p class="font-semibold text-white">$${coin.current_price?.toLocaleString('en-US', {maximumFractionDigits: 8}) ?? 'N/A'}</p>
+                    </div>
+                    <div class="text-center bg-gray-800 p-2 rounded">
+                        <p class="text-gray-400">MCap</p>
+                        <p class="font-semibold text-white">${formatNumber(coin.market_cap)}</p>
+                    </div>
+                    <div class="text-center bg-gray-800 p-2 rounded">
+                        <p class="text-gray-400">24h %</p>
+                        <p class="font-semibold ${change24h > 0 ? 'text-green-500' : 'text-red-500'}">${change24h?.toFixed(2) ?? 'N/A'}%</p>
+                    </div>
+                </div>
+            `;
+            row.addEventListener('click', () => switchView('detail', coin));
+            DOMElements.coinsList.appendChild(row);
+        });
+    }
+    
+    function renderDetailView(coin) {
+        const change24h = coin.price_change_percentage_24h_in_currency;
+        DOMElements.detailView.innerHTML = `
+            <div class="max-w-4xl mx-auto">
+                <button id="back-to-list-btn" class="flex items-center space-x-2 text-gray-300 hover:text-white mb-6">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+                    <span>Back to list</span>
+                </button>
+                
+                <div class="glass-pane p-6 sm:p-8 rounded-lg">
+                    <!-- Header -->
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 pb-6 border-b border-gray-700">
+                        <div class="flex items-center space-x-4">
+                            <img src="${coin.logoUrl}" class="w-16 h-16 rounded-full" onerror="this.src='https://placehold.co/64x64/1f2937/ffffff?text=${coin.symbol.charAt(0)}'">
+                            <div>
+                                <h2 class="text-3xl font-bold text-white">${coin.name} <span class="text-xl text-gray-400 font-normal">$${coin.symbol}</span></h2>
+                                <span class="text-sm px-2 py-1 rounded-full ${coin.isPresale ? 'bg-yellow-500 text-yellow-900' : 'bg-blue-500 text-blue-100'}">${coin.isPresale ? 'Presale' : coin.blockchain}</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 sm:mt-0">
+                            <button id="boost-project-btn" data-coin-id="${coin.id}" class="bg-yellow-500 hover:bg-yellow-600 text-yellow-900 font-bold py-2 px-5 rounded-lg transition">Boost Project 🔥</button>
+                        </div>
+                    </div>
+
+                    <!-- Price & Stats -->
+                    <div class="mb-6">
+                        <p class="text-4xl font-bold text-white">$${coin.current_price?.toLocaleString('en-US', {maximumFractionDigits: 8}) ?? 'N/A'} <span class="text-lg font-semibold ml-2 ${change24h > 0 ? 'text-green-500' : 'text-red-500'}">${change24h?.toFixed(2) ?? 'N/A'}% (24h)</span></p>
+                    </div>
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Market Cap</p><p class="text-xl font-semibold">${formatNumber(coin.market_cap)}</p></div>
+                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Volume (24h)</p><p class="text-xl font-semibold">${formatNumber(coin.total_volume)}</p></div>
+                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Boosts</p><p class="text-xl font-semibold">${coin.boosts}</p></div>
+                        <div class="bg-gray-800 p-4 rounded-lg"><p class="text-sm text-gray-400">Age</p><p class="text-xl font-semibold">${timeSince(coin.submittedAt)}</p></div>
+                    </div>
+
+                    <!-- Description & CA -->
+                    <div>
+                        <h3 class="text-xl font-bold mb-2">Description</h3>
+                        <p class="text-gray-300 mb-6">${coin.description}</p>
+                        <h3 class="text-xl font-bold mb-2">Contract Address</h3>
+                        <div class="bg-gray-800 p-3 rounded-lg font-mono text-sm break-all">${coin.contractAddress}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('back-to-list-btn').addEventListener('click', () => switchView('list'));
+        document.getElementById('boost-project-btn').addEventListener('click', () => toggleBoostModal(true, coin));
+    }
+
+    // --- DEMO DATA ---
+    function createDemoTokens() {
+        const demoTokens = [
+            {
+                id: '1',
+                contractAddress: '0x1234567890abcdef1234567890abcdef12345678',
+                logoUrl: 'https://placehold.co/64x64/3b82f6/ffffff?text=D',
+                blockchain: 'ethereum',
+                name: 'DemoToken',
+                symbol: 'DEMO',
+                description: 'This is a demo token to showcase the BaseFun platform. It demonstrates how new cryptocurrency projects can be listed and tracked.',
+                isPresale: false,
+                coingeckoId: 'ethereum',
+                submittedAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+                boosts: 5,
+                current_price: 1.234,
+                price_change_percentage_1h_in_currency: 2.5,
+                price_change_percentage_24h_in_currency: -3.2,
+                market_cap: 1250000000,
+                total_volume: 45000000
+            },
+            {
+                id: '2',
+                contractAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
+                logoUrl: 'https://placehold.co/64x64/10b981/ffffff?text=G',
+                blockchain: 'solana',
+                name: 'GemFinder',
+                symbol: 'GEM',
+                description: 'GemFinder is an innovative token discovery platform built on Solana. Find the next 100x gem before anyone else!',
+                isPresale: true,
+                coingeckoId: 'solana',
+                submittedAt: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+                boosts: 12,
+                current_price: 0.00045,
+                price_change_percentage_1h_in_currency: 15.7,
+                price_change_percentage_24h_in_currency: 42.1,
+                market_cap: 850000,
+                total_volume: 125000
+            },
+            {
+                id: '3',
+                contractAddress: '0x9876543210fedcba9876543210fedcba98765432',
+                logoUrl: 'https://placehold.co/64x64/f59e0b/ffffff?text=M',
+                blockchain: 'base',
+                name: 'MoonShot',
+                symbol: 'MOON',
+                description: 'MoonShot aims to revolutionize DeFi on Base chain with innovative yield farming strategies and automated portfolio management.',
+                isPresale: false,
+                coingeckoId: 'bitcoin',
+                submittedAt: new Date(Date.now() - 43200000).toISOString(), // 12 hours ago
+                boosts: 3,
+                current_price: 0.0123,
+                price_change_percentage_1h_in_currency: -1.2,
+                price_change_percentage_24h_in_currency: 8.9,
+                market_cap: 2100000,
+                total_volume: 320000
+            }
+        ];
+        
+        // Only add demo tokens if no tokens exist
+        const existingTokens = loadTokensFromLocalStorage();
+        if (existingTokens.length === 0) {
+            saveTokensToLocalStorage(demoTokens);
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    function setupEventListeners() {
+        DOMElements.menuButton.addEventListener('click', () => toggleDrawer(true));
+        DOMElements.closeDrawerButton.addEventListener('click', () => toggleDrawer(false));
+        DOMElements.drawerBackdrop.addEventListener('click', () => toggleDrawer(false));
+        DOMElements.addTokenForm.addEventListener('submit', handleAddToken);
+        
+        DOMElements.closeBoostModal.addEventListener('click', () => toggleBoostModal(false));
+        DOMElements.boostModalBackdrop.addEventListener('click', () => toggleBoostModal(false));
+        DOMElements.simulateBoostBtn.addEventListener('click', handleBoostToken);
+
+        DOMElements.filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                DOMElements.filterButtons.forEach(b => b.classList.remove('bg-blue-600', 'text-white'));
+                btn.classList.add('bg-blue-600', 'text-white');
+                filters.filterBy = btn.dataset.filter;
+                renderCoinList();
+            });
+        });
+
+        DOMElements.blockchainFilter.addEventListener('change', (e) => {
+            filters.blockchain = e.target.value;
+            renderCoinList();
+        });
+
+        DOMElements.sortBy.addEventListener('change', (e) => {
+            filters.sortBy = e.target.value;
+            renderCoinList();
+        });
+
+        // Make toggleDrawer available globally
+        window.toggleDrawer = toggleDrawer;
+    }
+
+    // --- INITIALIZATION ---
+    async function initializeApp() {
+        setupEventListeners();
+        createDemoTokens(); // Add demo data if no tokens exist
+        await loadAndRenderCoins();
+    }
+
+    // Start the app
+    initializeApp();
+</script>
+
+
+</body>
+</html>
